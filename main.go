@@ -52,9 +52,11 @@ func main() {
 	defHandler := handlers.NewHandler(b, ctx, ur)
 	startHandler := handlers.StartHandler{Handler: *defHandler}
 	textHandler := handlers.TextHandler{Handler: *defHandler}
+	callbackHandler := handlers.CallbackHandler{Handler: *defHandler}
 
-	b.Handle("/start", startHandler.Handle)
 	b.Handle(tb.OnText, textHandler.Handle)
+	b.Handle("/start", startHandler.Handle)
+	b.Handle(tb.OnCallback, callbackHandler.Handle)
 
 	b.Start()
 }

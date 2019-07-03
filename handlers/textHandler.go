@@ -16,51 +16,77 @@ type TextHandler struct {
 	Handler
 }
 
-func (h *TextHandler) Handle(m *tb.Message) error {
+func (h *TextHandler) Handle(m *tb.Message) {
+	log.Print("TextHandler")
+
 	userId := m.Sender.Recipient()
 
-	u := h.repository.Find(userId); if u == nil {
+	log.Printf("UserID: %v", userId)
+
+	u := h.repository.Find(userId)
+	if u == nil {
 		if h.bot != nil {
 			if _, err := h.bot.Send(m.Sender, "Отправьте /start для начала работы с ботом!"); err != nil {
 				log.Fatalln(err)
-				return nil
+				return
 			}
 		}
 	}
 
 	switch u.Phase {
 	case user.LoggingPhase:
-		if err := h.HandleLogging(m, u); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	if h.bot != nil {
-		if _, err := h.bot.Send(m.Sender, "Я не распознал вашу команду"); err != nil {
-			log.Fatalln(err)
-		}
-	}
-	return notParsed
-}
-
-func (h *TextHandler) HandleLogging(m *tb.Message, u *user.User) error {
-	text := m.Text; if !h.validateLoggingText(text) {
+		h.HandleLogging(m, u)
+	case user.MainPhase:
+		h.HandleMain(m, u)
+	default:
 		if h.bot != nil {
-			if _, err := h.bot.Send(m.Sender, "Необходимо ввести правильный токен. Пример: \"#000000\""); err != nil {
+			if _, err := h.bot.Send(m.Sender, "Я не распознал вашу команду"); err != nil {
 				log.Fatalln(err)
 			}
 		}
-		return notValidated
+	}
+}
+
+func (h *TextHandler) HandleLogging(m *tb.Message, u *user.User) {
+	text := m.Text
+	if !h.validateLoggingText(text) {
+		if h.bot != nil {
+			if _, err := h.bot.Send(m.Sender, "Необходимо ввести правильный код. Пример: \"#000000\""); err != nil {
+				log.Fatalln(err)
+			}
+		}
 	}
 
 	u.HashTag = &text
 	u.Phase = user.MainPhase
 	h.repository.Save(u)
-	return nil
+	if _, err := h.bot.Send(m.Sender, "Код принят, теперь можно развлекаться"); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func (h *TextHandler) validateLoggingText(text string) bool {
 	var validHash = regexp.MustCompile(`[#][0-9]{6}`)
 	return validHash.MatchString(text)
+}
+
+func (h *TextHandler) HandleMain(m *tb.Message, u *user.User) {
+	ib := [][]tb.InlineButton{
+		{
+			{
+				Unique: "123",
+				Text:   "Some Text",
+			},
+			{
+				Unique: "321",
+				Text:   "Some Text #2",
+			},
+		},
+	}
+
+	if _, err := h.bot.Send(m.Sender, "Уиииииииииииииииииии", &tb.ReplyMarkup{
+		InlineKeyboard: ib,
+	}); err != nil {
+		log.Fatalln(err)
+	}
 }
