@@ -53,10 +53,13 @@ func main() {
 	startHandler := handlers.StartHandler{Handler: *defHandler}
 	textHandler := handlers.TextHandler{Handler: *defHandler}
 	callbackHandler := handlers.CallbackHandler{Handler: *defHandler}
+	projectHandler := handlers.ProjectHandler{Handler: *defHandler}
 
 	b.Handle(tb.OnText, textHandler.Handle)
 	b.Handle("/start", startHandler.Handle)
 	b.Handle(tb.OnCallback, callbackHandler.Handle)
+	b.Handle("🐾 Это что за покемон? 🐾", textHandler.HandleTestStart)
+	b.Handle("💰Проект на миллион💰", projectHandler.Handle)
 
 	b.Start()
 }

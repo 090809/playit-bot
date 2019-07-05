@@ -10,7 +10,7 @@ const defaultStoragePath = "./storage/"
 
 type Repository struct {
 	Type        string
-	StoragePath string
+	storagePath string
 }
 
 func NewRepository(Type *string, storagePath *string) *Repository {
@@ -26,7 +26,7 @@ func NewRepository(Type *string, storagePath *string) *Repository {
 	} else {
 		rPath = *storagePath
 	}
-	return &Repository{Type: rType, StoragePath: rPath}
+	return &Repository{Type: rType, storagePath: rPath}
 }
 
 func (r *Repository) Find(id string) *User {
@@ -36,13 +36,13 @@ func (r *Repository) Find(id string) *User {
 	case "file":
 		return r.findFile(id)
 	default:
-		log.Fatal("[FATAL] Non existing type of repository set!")
+		log.Printf("[FATAL] Non existing type of repository set!")
 	}
 	return nil
 }
 
 func (r *Repository) findFile(id string) *User {
-	file, err := os.Open(r.StoragePath + id + ".json")
+	file, err := os.Open(r.storagePath + id + ".json")
 	if err != nil {
 		log.Printf("[WARNING] Ошибка при попытке открытия файла: %v", err)
 		return nil
@@ -63,7 +63,7 @@ func (r *Repository) Save(u *User) {
 	case "file":
 		r.saveFile(u)
 	default:
-		log.Fatal("[FATAL] Non existing type of repository set!")
+		log.Print("[FATAL] Non existing type of repository set!")
 	}
 }
 
@@ -75,9 +75,9 @@ func (r *Repository) saveFile(u *User) {
 	}
 
 	var file *os.File
-	file, err = os.OpenFile(r.StoragePath+u.Id+".json", os.O_RDWR|os.O_TRUNC, 0755)
+	file, err = os.OpenFile(r.storagePath+u.Id+".json", os.O_RDWR|os.O_TRUNC, 0755)
 	if err != nil {
-		file, err = os.Create(r.StoragePath + u.Id + ".json")
+		file, err = os.Create(r.storagePath + u.Id + ".json")
 		if err != nil {
 			log.Fatalf("Фантастика какая-то, я не смог ни открыть, ни создать файл: %v", err)
 		}

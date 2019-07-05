@@ -2,15 +2,19 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"regexp"
 
 	tb "github.com/090809/telebot"
+	"playit-bot/buttons"
 	"playit-bot/user"
+	"playit-bot/utils"
 )
 
-var notValidated = errors.New("token not validated")
-var notParsed = errors.New("command not parsed")
+var errorMessage = "Бип-бип! У нас произошла ошибка, подойди к ребятам на стенде, и покажи им это сообщение."
+
+var loggedText = "Мы проверили твой код, тебя же зовут %s? Если нет, начни сначала и введи правильный код"
 
 type TextHandler struct {
 	Handler
@@ -27,10 +31,10 @@ func (h *TextHandler) Handle(m *tb.Message) {
 	if u == nil {
 		if h.bot != nil {
 			if _, err := h.bot.Send(m.Sender, "Отправьте /start для начала работы с ботом!"); err != nil {
-				log.Fatalln(err)
-				return
+				log.Printf("[ERROR] %v", err)
 			}
 		}
+		return
 	}
 
 	switch u.Phase {
@@ -38,55 +42,64 @@ func (h *TextHandler) Handle(m *tb.Message) {
 		h.HandleLogging(m, u)
 	case user.MainPhase:
 		h.HandleMain(m, u)
+	case user.ProjectPhase:
+		h.HandleProjectText(m)
+	case user.TestPhase:
+		h.HandleTest(m)
 	default:
 		if h.bot != nil {
 			if _, err := h.bot.Send(m.Sender, "Я не распознал вашу команду"); err != nil {
-				log.Fatalln(err)
+				log.Printf("[ERROR] %v", err)
 			}
 		}
 	}
 }
 
 func (h *TextHandler) HandleLogging(m *tb.Message, u *user.User) {
-	text := m.Text
-	if !h.validateLoggingText(text) {
+	tag := m.Text
+	if !h.validateLoggingText(tag) {
 		if h.bot != nil {
 			if _, err := h.bot.Send(m.Sender, "Необходимо ввести правильный код. Пример: \"#000000\""); err != nil {
-				log.Fatalln(err)
+				log.Printf("[ERROR] %v", err)
 			}
 		}
+		return
 	}
 
-	u.HashTag = &text
+	tagId := tag[1:]
+
+	name, err := utils.CheckTag(tagId)
+	if err != nil {
+		if _, err := h.bot.Send(m.Sender, errorMessage); err != nil {
+			log.Printf("[ERROR] %v", err)
+		}
+		return
+	}
+
+	u.HashTag = &tagId
 	u.Phase = user.MainPhase
 	h.repository.Save(u)
-	if _, err := h.bot.Send(m.Sender, "Код принят, теперь можно развлекаться"); err != nil {
-		log.Fatalln(err)
+
+	ib := buttons.LoginInlineButtons
+
+	if _, err := h.bot.Send(m.Sender, fmt.Sprintf(loggedText, name), &tb.ReplyMarkup{
+		InlineKeyboard: ib,
+	}); err != nil {
+		log.Printf("[ERROR] %v", err)
 	}
 }
 
 func (h *TextHandler) validateLoggingText(text string) bool {
-	var validHash = regexp.MustCompile(`[#][0-9]{6}`)
+	var validHash = regexp.MustCompile(`[#][0-9]{5,6}`)
 	return validHash.MatchString(text)
 }
 
 func (h *TextHandler) HandleMain(m *tb.Message, u *user.User) {
-	ib := [][]tb.InlineButton{
-		{
-			{
-				Unique: "123",
-				Text:   "Some Text",
-			},
-			{
-				Unique: "321",
-				Text:   "Some Text #2",
-			},
-		},
-	}
+	replyButtons := buttons.MainReplyButtons
 
-	if _, err := h.bot.Send(m.Sender, "Уиииииииииииииииииии", &tb.ReplyMarkup{
-		InlineKeyboard: ib,
+	if _, err := h.bot.Send(m.Sender, "Команда не разобрана", &tb.ReplyMarkup{
+		ReplyKeyboard: replyButtons,
 	}); err != nil {
-		log.Fatalln(err)
+		log.Printf("[ERROR] %v", err)
 	}
 }

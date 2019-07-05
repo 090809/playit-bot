@@ -19,14 +19,15 @@ func (h *StartHandler) Handle(m *tb.Message) {
 	h.ProcessUser(userId)
 
 	if _, err := h.bot.Send(m.Sender, startMessage); err != nil {
-		log.Fatalln(err)
+		log.Printf("[ERROR] %v", err)
 	}
 }
 
 func (h *StartHandler) ProcessUser(userId string) {
 	var u *user.User
 
-	u = h.repository.Find(userId); if u == nil {
+	u = h.repository.Find(userId)
+	if u == nil {
 		u = user.NewUser(userId, user.LoggingPhase, nil)
 	}
 	u.Phase = user.LoggingPhase
