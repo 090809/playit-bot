@@ -11,7 +11,8 @@ type StartHandler struct {
 	Handler
 }
 
-const startMessage = "Привет, пришли мне свой хештэг-номер, который ты получил ранее, и мы приступим к заданиям =)"
+const startMessage = "Привет, пришли мне свой хештэг-номер, " +
+	"который ты можешь найти в своем личном кабинете, и мы приступим к заданиям =)"
 
 func (h *StartHandler) Handle(m *tb.Message) {
 	userId := m.Sender.Recipient()

@@ -34,6 +34,8 @@ func CheckTag(tag string) (string, error) {
 		log.Printf("[ERROR] %v", err)
 	}
 
+	log.Print(url)
+
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{}
@@ -77,6 +79,8 @@ func Confirm(what string, tag string) error {
 		log.Printf("[ERROR] %v", err)
 	}
 
+	log.Print(URL)
+
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{}
@@ -85,6 +89,10 @@ func Confirm(what string, tag string) error {
 		log.Printf("[ERROR] %v", err)
 	}
 	defer resp.Body.Close()
+
+	htmlData, err := ioutil.ReadAll(resp.Body)
+
+	log.Print(string(htmlData))
 
 	return nil
 }

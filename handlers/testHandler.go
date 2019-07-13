@@ -7,6 +7,7 @@ import (
 	tb "github.com/090809/telebot"
 	"playit-bot/buttons"
 	"playit-bot/user"
+	"playit-bot/utils"
 )
 
 var testStartMessage = "Время по гадальному хрусталю и простенькому тесту определить, " +
@@ -15,6 +16,12 @@ var testStartMessage = "Время по гадальному хрусталю и
 
 func (h *TextHandler) HandleTestStart(m *tb.Message) {
 	u := h.repository.Find(m.Sender.Recipient())
+	if u == nil {
+		if _, err := h.bot.Send(m.Sender, "Пожалуйста, начните работу с ботом командой /start"); err != nil {
+			log.Printf("[ERROR] %v", err)
+		}
+		return
+	}
 
 	if _, ok := u.Completed[user.Test]; ok {
 		if _, err := h.bot.Send(m.Sender, "Вы уже выполняли это задание!"); err != nil {
@@ -194,7 +201,7 @@ func (h *TextHandler) testResult(m *tb.Message, u *user.User) {
 		text = "ты суровый программист, вооруженный бубном, а вместо крови у тебя по венам течет энергетик.\n\nТы - бэкендер"
 	}
 
-	_, err := h.bot.Send(m.Sender, fmt.Sprintf("Поздравлям, %s", text), &tb.ReplyMarkup{
+	_, err := h.bot.Send(m.Sender, fmt.Sprintf("Поздравлям, %s\n\nЗа это задание ты получил 150 devcoin-ов!", text), &tb.ReplyMarkup{
 		ReplyKeyboard: buttons.MainReplyButtons,
 	})
 	if err != nil {
@@ -202,6 +209,9 @@ func (h *TextHandler) testResult(m *tb.Message, u *user.User) {
 	}
 
 	u.Completed[user.Test] = true
+	if err := utils.Confirm("test", *u.HashTag); err != nil {
+		log.Printf("[ERROR] %v", err)
+	}
 	h.repository.Save(u)
 }
 
